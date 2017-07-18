@@ -26,7 +26,23 @@ class ProductsController extends Controller
      */
     public function store(Request $request)
     {
-        $product = Product::create($request->all() + ['user_id'=> Auth::id()]);
+        //exploded img->base64
+        $exploded = explode(',', $request->image);
+
+        $decoded = base64_decode($exploded[1]);
+        //extension
+        if(str_contains($exploded[0],'jpeg')) {
+            $extension = 'jpg';
+        }
+        else {
+            $extension = 'png';
+        }
+        $fileName = str_random().'.'.$extension;
+        $path = public_path().'/img/'.$fileName;
+
+        file_put_contents($path, $decoded);
+
+        $product = Product::create($request->except('image') + ['user_id'=> Auth::id(),'image'=>$fileName]);
 
         return $product;
     }
@@ -39,7 +55,12 @@ class ProductsController extends Controller
      */
     public function show($id)
     {
-        return response()->json(Product::find($id));
+        $product = Product::find($id);
+
+        if(count($product) > 0) {
+            return response()->json($product);
+        }
+        return response()->json(['error'=>'Resource not found'],404);
     }
 
     /**
